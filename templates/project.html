@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Project{% endblock %}
+
+{% block jscript %}
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#project").attr("class", "active");
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+    <h1>Project Content</h1>
+{% endblock %}

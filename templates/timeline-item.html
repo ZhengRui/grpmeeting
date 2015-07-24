@@ -1,0 +1,48 @@
+{% for meeting in batchmeetings %}
+<div class="timeline-item" id="mid-{{ meeting.mid }}">
+        <div class="metainfo">
+            <span class="marker"><span class="dot"></span></span>
+            <div class="time"><img src="static/imgs/time.svg" alt="TIME" class="metaicon">{{ meeting.mtime }}</div>
+            <div class="place"><img src="static/imgs/location.svg" alt="LOCATION" class="metaicon">{{ meeting.mplace }}</div>
+            <div class="speaker"><img src="static/imgs/speaker.svg" alt="SPEAKER" class="metaicon">{{ meeting.speaker.name }}</div>
+        </div>
+        <div class="info">
+            <div class="title">
+                {{ meeting.title }}
+                {% if meeting.speaker.uid == session.uid or session.name == "Symlab" %}
+                <a href="#meetingform"><input type="image" title="Edit" src="static/imgs/edit.svg" alt="EDIT" class="edticon"></a>
+                {% endif %}
+                <div class="tticondiv">
+                    {% if fstlike2u[meeting.mid] %}
+                    <input type="image" title="Like" src="static/imgs/like.svg" alt="LIKE" class="lkicon">
+                    {% else %}
+                    <input type="image" title="Unlike" src="static/imgs/unlike.svg" alt="UNLIKE" class="ulkicon">
+
+                    {% endif %}
+
+                    <span>{{ meeting.likesnum }}</span>
+                    <input type="image" title="Show Comments" src="static/imgs/cmt.svg" alt="SHOW COMMENTS" class="showcmticon">
+                    <span>{{ meeting.cmtsnum }}</span>
+                    {% if meeting.downlink %}
+                        {% for downlink in  meeting.downlink.split(";") %}
+                        <a href="{{ upath + '/' + downlink.strip() }}" target="_blank"><img src="static/imgs/download.svg" alt="DOWNLOAD" class="dlicon"></a>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="tags">
+                {% if meeting.tags %}
+                    {% for tag in meeting.tags.split(";") %}    
+                    <a href="javascript:void(0);" class="cooltag">{{ tag }}</a>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="mkdblock abstract">{{ meeting.abstr|markdown }}</div>
+            <div class="comments">
+                {% if session.signed_in %}
+                <div class="newcmt"><span>New Comment</span></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endfor %}

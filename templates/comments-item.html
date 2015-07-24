@@ -1,0 +1,29 @@
+<div class="cmtsbody">
+{%- for comment in comments recursive %}
+<div class="cmt-item" id="cid-{{ comment.cid }}">
+<div class="cmtheader">
+    <span class="commenter">{{ commenters[comment.cid] }}</span>    
+    {% if not comment.cpid == comment.mid %}
+        {% if not commenters[comment.cid] == commenters[comment.cpid] %}
+        <span class="icon-forward"><img src="static/imgs/icon-forward.svg" alt="reply"></span>
+        <span class="commenterp">{{ commenters[comment.cpid] }}</span> 
+        {% endif %}
+    {% endif %}
+    <span class="bullet">•</span>
+    <span class="commenttime">{{ comment.ctime|timesince }}</span>
+    {% if session.signed_in %}
+    <span class="bullet">•</span>
+    <div class="newreply"><span>Reply</span></div>
+        {% if session.uid == comment.uid %}
+        <span class="bullet">•</span>
+        <div class="cmtedit"><span>Edit</span></div>
+        {% endif %}
+    {% endif %}
+</div>
+<div class="mkdblock cmteach">{{ comment.cmt|markdown }}</div>
+</div>
+    {%- if comment.childcmts -%}
+    <div class="childcmts">{{ loop(comment.childcmts) }}</div>
+    {%- endif -%}
+{%- endfor %}
+</div>

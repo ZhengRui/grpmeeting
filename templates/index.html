@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block jscript %}
+
+<!-- {{ pagedown.include_pagedown() }} -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Sanitizer.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Editor.min.js"></script>
+
+<script src="https://google-code-prettify.googlecode.com/svn/loader/prettify.js"></script>
+<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
+
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
+
+<script type="text/javascript">
+    var start = 0;
+    var step = 10;
+    var batch_n = 0;
+    var editors = {};
+
+    $(document).ready(function() {
+        loadMore();
+        $("#meeting").attr("class", "active");
+
+        $(".timeline").on('mouseenter mouseleave', '.timeline-item', function() {
+            $(".timeline-item").removeClass("active");
+            $(this).toggleClass("active");
+        //    $(this).prev(".timeline-item").toggleClass("close");
+        //    $(this).next(".timeline-item").toggleClass("close");
+        });
+
+        $(".timeline").on('click', '.lkicon', function() {
+            var mid = $(this).closest('.timeline-item').attr('id').slice(4);
+            $.getJSON("{{ url_for('likeameeting') }}",
+                {
+                    mid: mid
+                }, function(data) {
+                    $('#mid-' + mid + ' .lkicon').replaceWith('<input type="image" title="Unlike" src="static/imgs/unlike.svg" alt="UNLIKE" class="ulkicon">');
+                    $('#mid-' + mid + ' .tticondiv span').first().text(data['newlikesnum']);
+                });
+        });
+
+        $(".timeline").on('click', '.ulkicon', function() {
+            var mid = $(this).closest('.timeline-item').attr('id').slice(4);
+            $.getJSON("{{ url_for('unlikeameeting') }}",
+                {
+                    mid: mid
+                }, function(data) {
+                    $('#mid-' + mid + ' .ulkicon').replaceWith('<input type="image" title="Like" src="static/imgs/like.svg" alt="LIKE" class="lkicon">');
+                    $('#mid-' + mid + ' .tticondiv span').first().text(data['newlikesnum']);
+                });
+        });
+
+        $(".timeline").on('click', '.showcmticon', function() {
+            var mid = $(this).closest('.timeline-item').attr('id').slice(4);
+            $('#mid-' + mid + ' .showcmticon').replaceWith('<input type="image" title="Hide Comments" src="static/imgs/collapse.svg" alt="HIDE COMMENTS" class="hidecmticon">');
+            if (! $('#mid-' + mid + ' .comments .cmtsbody').length) {
+                $.getJSON("{{ url_for('getcomments') }}",
+                    {
+                        mid: mid
+                    }, function(data) {
+                        $('#mid-' + mid + ' .comments').append(data['injecthtml']);
+                        $('#mid-' + mid + ' .comments .cmteach').find("pre").addClass("prettyprint");
+                        prettyPrint();
+                        MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                });
+            }
+            $('#mid-' + mid + ' .comments').show(500);
+        });
+
+        $(".timeline").on('click', '.hidecmticon', function() {
+            var mid = $(this).closest('.timeline-item').attr('id').slice(4);
+            $('#mid-' + mid + ' .hidecmticon').replaceWith('<input type="image" title="Show Comments" src="static/imgs/cmt.svg" alt="SHOW COMMENTS" class="showcmticon">');
+            $('#mid-' + mid + ' .comments').hide(500);
+        });
+
+        $(".timeline").on('click', '.newcmt span', function() {
+            $(this).toggleClass('newcmtclicked');
+
+            var mid = $(this).closest('.timeline-item').attr('id').slice(4);
+            if ($('#mid-' + mid + ' .comments .newcmtform').length) {
+                if ($('#mid-' + mid + ' .comments .newcmtform').is(":visible")) {
+                    $('#mid-' + mid + ' .comments .newcmtform').hide(100);
+                } else {
+                    $('#mid-' + mid + ' .comments .newcmtform').show(100);
+                }
+            } else {
+                $(this).closest('.newcmt').after('<div class="newcmtform"><label><span id="wmd-button-bar-m' + mid + '"></span><textarea class="wmd-input" id="wmd-input-m' + mid + '" name="newcmt" placeholder="Join the discussion ..." rows="3"></textarea><div class="wmd-preview" id="wmd-preview-m' + mid + '"></div></label><div style="padding-left: 84%"><a class="btn newcmtbtn">OK</a></div></div>');
+                wmdrefresh('-m' + mid);
+            }
+        });
+
+        var hidereason = 0;
+        $(".timeline").on('click', '.newreply span', function() {
+            $(this).toggleClass('newreplyclicked');
+
+            var cid = $(this).closest('.cmt-item').attr('id').slice(4);
+            if ($('#cid-' + cid + ' .newreplyform').length) {
+                if ($('#cid-' + cid + ' .newreplyform').is(":visible")) {
+                    if ($('#cid-' + cid + ' .cmtedit span').hasClass('cmteditclicked')) {
+                        $('#cid-' + cid + ' .cmtedit span').toggleClass('cmteditclicked');
+                        $('#wmd-input-c' + cid).val('');
+                        editors["c" + cid].refreshPreview();
+                    } else {
+                        hidereason = 0;
+                        $('#cid-' + cid + ' .newreplyform').hide(100);
+                    }
+                } else {
+                    if (hidereason) {
+                        $('#wmd-input-c' + cid).val('');
+                        editors["c" + cid].refreshPreview();
+                    }
+                    $('#cid-' + cid + ' .newreplyform').show(100);
+                }
+            } else {
+                $(this).closest('.cmt-item').append('<div class="newreplyform"><label><span id="wmd-button-bar-c' + cid + '"></span><textarea class="wmd-input" id="wmd-input-c' + cid + '" name="newreply" placeholder="Join the discussion ..." rows="3"></textarea><div class="wmd-preview" id="wmd-preview-c' + cid + '"></div></label><div style="padding-left: 84%"><a class="btn newreplybtn">OK</a></div></div>');
+                editors["c" + cid] = wmdrefresh('-c' + cid);
+            }
+
+        });
+
+        $(".timeline").on('click', '.cmtedit span', function() {
+            $(this).toggleClass('cmteditclicked');
+
+            var cid = $(this).closest('.cmt-item').attr('id').slice(4);
+            if ($('#cid-' + cid + ' .newreplyform').length) {
+                if ($('#cid-' + cid + ' .newreplyform').is(":visible")) {
+                    if ($('#cid-' + cid + ' .newreply span').hasClass('newreplyclicked')) {
+                        $('#cid-' + cid + ' .newreply span').toggleClass('newreplyclicked');
+                        editcmtinit(cid);
+                    } else {
+                        hidereason = 1;
+                        $('#cid-' + cid + ' .newreplyform').hide(100);
+                    }
+                } else {
+                    if (!hidereason) {
+                        editcmtinit(cid);
+                    }
+                    $('#cid-' + cid + ' .newreplyform').show(100);
+                }
+            } else {
+                $(this).closest('.cmt-item').append('<div class="newreplyform"><label><span id="wmd-button-bar-c' + cid + '"></span><textarea class="wmd-input" id="wmd-input-c' + cid + '" name="newreply" placeholder="Join the discussion ..." rows="3"></textarea><div class="wmd-preview" id="wmd-preview-c' + cid + '"></div></label><div style="padding-left: 84%"><a class="btn newreplybtn">OK</a></div></div>');
+                editors["c" + cid] = wmdrefresh('-c' + cid);
+                editcmtinit(cid);
+            }
+
+        });
+
+        $('#meetingform form, .timeline').on('keyup', '.wmd-input', function() {
+            if (!$(this).prop('scrollTop')) {
+                do {
+                    var b = $(this).prop('scrollHeight');
+                    var h = $(this).height();
+                    $(this).height(h - 5);
+                } while (b && (b != $(this).prop('scrollHeight')));
+            };
+            $(this).height($(this).prop('scrollHeight') + 20); 
+        });
+
+        $('.timeline').on('click', '.newcmtbtn', function() {
+            var mid = $(this).closest('.timeline-item').attr('id').slice(4);
+            var cmt = $('#wmd-input-m' + mid).val();
+            $.getJSON("{{ url_for('newcomment') }}",
+                {
+                    mid: mid,
+                    cpid: mid,
+                    cmt: cmt,
+                    isfresh: 1
+                }, function(data) {
+                    $('#mid-' + mid + ' .cmtsbody').html(data['injecthtml']);
+                    $('#mid-' + mid + ' .comments .cmteach').find("pre").addClass("prettyprint");
+                    prettyPrint();
+                    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                    $('#mid-' + mid + ' .tticondiv span').last().text(data['newcmtsnum']);
+                    $('#mid-' + mid + ' .newcmt span').toggleClass('newcmtclicked');
+                    $('#mid-' + mid + ' .comments .newcmtform').hide(100);
+
+            });
+        });
+
+        $('.timeline').on('click', '.newreplybtn', function() {
+            var mid = $(this).closest('.timeline-item').attr('id').slice(4);
+            var cid = $(this).closest('.cmt-item').attr('id').slice(4);
+            var cmt = $('#wmd-input-c' + cid).val();
+            var isfresh = 1;
+            
+            if ($('#cid-' + cid + ' .cmtedit span').hasClass('cmteditclicked')) isfresh = 0;
+
+            $.getJSON("{{ url_for('newcomment') }}",
+                {
+                    mid: mid,
+                    cpid: cid,
+                    cmt: cmt,
+                    isfresh: isfresh
+                }, function(data) {
+                    $('#mid-' + mid + ' .cmtsbody').html(data['injecthtml']);
+                    $('#mid-' + mid + ' .comments .cmteach').find("pre").addClass("prettyprint");
+                    prettyPrint();
+                    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                    $('#mid-' + mid + ' .tticondiv span').last().text(data['newcmtsnum']);
+            });
+        });
+
+        if($('#selname').length && $('#selname option').size() == 0) {
+            $.getJSON("{{ url_for('getusrlist') }}",
+                {
+                }, function(data) {
+                    $.each(data, function(key, value) {
+                        $('#selname')
+                            .append($("<option></option>")
+                            .attr("value", value)
+                            .text(key));
+                    });
+                });
+        };
+
+        if($('#newtime').length) $('#newtime').val(currenttime());
+        if($('#wmd-input').length) editors['mtform'] = wmdrefresh();
+
+        $('#popnewmeeting').on('click', function() {
+            newmeetinginit();
+            $('#newtime').attr({"style":"background: transparent;"});
+            $('#newplace').attr({"style":"background: transparent;"});
+            $('#newtitle').attr({"style":"background: transparent;"});
+        });
+
+        $('.timeline').on('click', '.edticon', function() {
+            var mid = $(this).closest('.timeline-item').attr('id').slice(4);
+            $('#newslides').closest('label').children('a').remove();
+            $('#meetingform .popup .popup-header h2').html('Edit Meeting');
+            editmeetinginit(mid);
+            $('#newtime').attr({"style":"background: transparent;"});
+            $('#newplace').attr({"style":"background: transparent;"});
+            $('#newtitle').attr({"style":"background: transparent;"});
+        });
+
+        $('#meetingform form').on("keyup keypress", function(e) {
+          var code = e.keyCode || e.which; 
+          if (code  == 13 && e.target.nodeName != 'TEXTAREA') {               
+            e.preventDefault();
+            return false;
+          }
+        });
+        
+
+        $('#meetingform form').on('submit', function(e) {
+            e.preventDefault(); //stop refresh after failed submit
+            $('#newtime').attr({"style":"background: transparent;"});
+            $('#newplace').attr({"style":"background: transparent;"});
+            $('#newtitle').attr({"style":"background: transparent;"});
+            var formData = new FormData($(this)[0]);
+            $.ajax({
+                url: "{{ url_for('newOReditmeeting') }}",
+              //  data: $(this).serialize(),
+                data: formData,
+                type: 'POST',
+                contentType: false,
+                processData: false,
+                success: function(r) {
+                    var data = JSON.parse(r);
+                    if (data['success'] == '0') {
+                        $.each(data['err'], function(key, value) {
+                            if (key == 'title') {
+                                $('#newtitle').attr({"placeholder":value, "style":"background: rgba(0,0,255,0.2);"});
+                            } else if (key == 'mtime') {
+                                $('#newtime').attr({"placeholder":value, "style":"background: rgba(0,0,255,0.2);"});
+                            } else if (key == 'mplace') {
+                                $('#newplace').attr({"placeholder":value, "style":"background: rgba(0,0,255,0.2);"});
+                            } else {}
+                        })
+                    } else {
+                        window.location.href = "{{ url_for('home') }}";
+                    }
+                }
+            });
+        });
+
+        function loadMore() {
+            $.getJSON("{{ url_for('batchmeetings') }}",
+                {
+                    start: start,
+                    step: step
+                }, function(data) { 
+                    if (data['injecthtml']) {
+                        $('.timeline').first().append(data['injecthtml']);
+                        $(".timeline-item .abstract").slice(batch_n * step, (batch_n + 1) * step).find("pre").addClass("prettyprint");
+                        prettyPrint();
+                        MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                        start += step;
+                        batch_n += 1;
+                    }
+                });
+        }
+
+        function bindScroll() {
+            if($(window).scrollTop() + $(window).height() == $(document).height()) {
+                $(window).unbind('scroll');
+                loadMore();
+                $(window).bind('scroll', bindScroll);
+            }
+        } 
+
+        $(window).scroll(bindScroll);
+
+        $(window).on('beforeunload', function() {
+            $(window).scrollTop(0);
+        });
+
+        function editcmtinit(cid) {
+            $.getJSON("{{ url_for('getacomment') }}", {
+                cid: cid
+            }, function(data){
+                $('#wmd-input-c' + cid).val(data['rawcmt']);
+                editors["c" + cid].refreshPreview();
+            });
+        }
+
+        function newmeetinginit() {
+            $('#newslides').closest('label').children('a').remove();
+            $('#meetingform .popup .popup-header h2').html('New Meeting');
+            $('#hiddenmid').val('');
+            $('#newtime').val(currenttime());
+            $('#newplace').val('LG3 Seminar Room');
+            $('#newtitle').val('');
+            $('#newtags').val('');
+            $('#wmd-input').val('');
+            editors["mtform"].refreshPreview();
+        }
+
+        function editmeetinginit(mid) {
+            $.getJSON("{{ url_for('getameeting') }}", {
+                mid: mid
+            }, function(data) {
+                $('#hiddenmid').val(mid);
+                $('#newtime').val(data['time'].slice(0,-3));
+                $('#newplace').val(data['place']);
+                $('#newtitle').val(data['title']);
+                $('#newtags').val(data['tags']);
+                $('#wmd-input').val(data['abstract']);
+                editors["mtform"].refreshPreview();
+                if (data['downlink']) $('#newslides').before('<a href="' + data['upath'] + '/' + data['downlink'] + '" target="_blank"><img src="static/imgs/download.svg" alt="DOWNLOAD" style="height:12px; float:right; margin-top: 4px;"></a>');
+            });
+        }
+
+    });
+
+    function currenttime() {
+        var currentDate = new Date();
+        var timezoneOffset = currentDate.getTimezoneOffset() * 60 * 1000;
+        var localDate = new Date(currentDate.getTime() - timezoneOffset);
+        var localDateISOString = localDate.toISOString().slice(0, -8);
+        return localDateISOString;
+    }
+
+
+    function wmdrefresh(id) {
+        var converter1 = new Markdown.Converter();
+        converter1.hooks.chain("postConversion", function (text) {
+                return text.replace(/<pre>/gi, "<pre class=prettyprint>");
+        });
+
+        if (id == undefined) {
+            var editor1 = new Markdown.Editor(converter1);
+        } else {
+            var editor1 = new Markdown.Editor(converter1, id);
+        };
+
+        editor1.hooks.chain("onPreviewRefresh", function () {
+            prettyPrint();
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+        });
+        editor1.run();
+        return editor1;
+    }
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="toolbox">
+    {% if session.signed_in %}
+    <a href="#meetingform" style="display:block; margin-bottom: 1px;" id="popnewmeeting"><input type="submit" value="NEW" class="emerald-flat-button"/></a>
+    <!--
+        {% if session.name == "Symlab" %}
+        <a href="#nxtmeeting" style="display:block; margin-bottom: 1px;"><input type="submit" value="NXT" class="emerald-flat-button"/></a>
+        {% endif %}
+    -->
+    {% endif %}
+    <!--  <a href="#fltmeeting" style="display:block; margin-bottom: 1px;"><input type="submit" value="FLT" class="emerald-flat-button"/></a>  -->
+</div>
+
+{% if session.signed_in %}
+<div id="meetingform" class="overlay">
+    <div class="popup">
+        <div class="popup-header">
+            <h2>Meeting</h2>
+            <a class="close" href="#close">&times;</a>
+        </div>
+        <div class="popup-body">
+            <form class="coolform" enctype="multipart/form-data">
+                {{ meetingform.hidden_tag() }}
+                <input type="hidden" name="mid" id="hiddenmid"/>
+                <div class="col-3">
+                    <label>
+                        Speaker
+                        {% if session.name == "Symlab" %}
+                            <select name="uid" id="selname" tabindex="1"></select>
+                        {% else %}
+                            <input type="hidden" name="uid" value={{ session.uid }} readonly/>
+                            <input name="name" value={{ session.name }} tabindex="1" readonly/>
+                        {% endif %}
+                    </label>
+                </div>
+                <div class="col-3 col-3-m">
+                    <label>
+                        Time
+                        <input name="mtime" id="newtime" type="datetime-local" placeholder="When is the presentation?" tabindex="2" required />
+                    </label>
+                </div>
+                <div class="col-3 col-3-r">
+                    <label>
+                        Location
+                        <input name="mplace" id="newplace" value="LG3 Seminar Room" tabindex="3" placeholder="Where is the presentation?" required />
+                    </label>
+                </div>
+                <div class="col-2 col-2-l">
+                    <label>
+                        Title
+                        <input name="title" id="newtitle" placeholder="What is the presentation's title?" tabindex="4" required />
+                    </label>
+                </div>
+                <div class="col-2 col-2-r">
+                    <label>
+                        Slides
+                        <input type="file" name="slides" id="newslides" placeholder="Would you like to share your slides?" tabindex="5"/>
+                    </label>
+                </div>
+                <div class="col-1-border">
+                    <label>
+                        Tags
+                        <input name="tags" id="newtags" placeholder="Put some tags here if you want. Seperated with ;" tabindex="6" />
+                    </label>
+                </div>
+                <div class="col-1">
+                    <label>
+                        Abstract
+                        <!-- <input name="abstr" placeholder="Put an abstract or introduction here if you want." tabindex="7" /> -->
+                        <!-- {{ meetingform.abstr(rows = 3, placeholder = 'Put an abstract or introduction here if you want.') }} -->
+                        <div class="wmd-block">
+                            <span id="wmd-button-bar"></span>
+                            <textarea class="wmd-input" id="wmd-input" name="abstr" placeholder="Put an abstract or introduction here if you want." rows="3" tabindex="7"></textarea> 
+                            <div class="wmd-preview" id="wmd-preview"></div>
+                        </div>
+                    </label>
+                </div>
+                <div class="cfsubmit">
+                    <button type="submit" tabindex="8">OK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="timeline">
+
+
+</div>
+
+{% endblock %}

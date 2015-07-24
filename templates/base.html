@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,300,400,700|Oswald:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="static/css/style.css" />
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <title>Group Meeting - {% block title %}{% endblock %}</title>
+    {% block jscript %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="nav">
+            <ul>
+                <li id="welcome">
+                    {% if not session.signed_in %}
+                    Welcome
+                    {% else %}
+                    Welcome {{ session.name }}
+                    {% endif %}
+                </li>
+                <li><a id="meeting" href="index">Meeting</a></li>
+                <li><a id="project" href="project">Project</a></li>
+                <li id="inout">
+                    {% if not session.signed_in %}
+                    <a id="signinout" href="signin">SignIn</a>
+                    {% else %}
+                    <a id="signinout" href="signout">SignOut</a>
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
+    </header>
+    <div class="content">{% block content %}{% endblock %}</div>
+</body>
