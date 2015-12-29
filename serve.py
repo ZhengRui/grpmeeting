@@ -15,7 +15,7 @@ pagedown = PageDown(app)
 markdown = Markdown(app)
 
 UPLOAD_FOLDER = 'static/uploads'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://testusr:testpsd@localhost/testdb'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://zerry:cluster@localhost/grpmeeting'
 app.config['SECRET_KEY'] = 'randommeetings'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 db = SQLAlchemy()
