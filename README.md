@@ -1,5 +1,7 @@
 This is a demo web based on [Flask](http://flask.pocoo.org/), though it's meant for meeting management and discussion within my lab, with minor changes in css it can also become a CMS like a personal blog. I think the most unique feature is **Everything in Markdown** -- you can post and comment in Markdown syntax with MathJax support.
 
+Can look at features from this [video](https://www.youtube.com/watch?v=KwDADwoD9iY)
+
 ### Setting up
 + **Database**
 ```bash
@@ -42,12 +44,15 @@ python serve.py                     # start using the web
 ```
 
 
++ **Deployment**
+
+To make other machines being able to visit web through your IP, run script `./runapp.sh` (install dependencies if met errors), other machines should be able to visit through `$YOURIP:8000`
 
 
 ### Implementation
 + **Markdown / MathJax**
 
-  *References*: [PageDown](https://code.google.com/p/pagedown/wiki/PageDown) is used on Stack Overflow, here is a [PageDown demo](http://pagedown.googlecode.com/hg/demo/browser/demo.html). [Prettify](https://code.google.com/p/google-code-prettify/wiki/GettingStarted) is used to highlight code (e.g. highlight the injected html after client creates new contents). [MathJax](http://docs.mathjax.org/en/latest/start.html) and [MathJax tutorial](http://meta.math.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference), for researchers you definitly need it. [Flask-Markdown](https://pythonhosted.org/Flask-Markdown/) is used on the server for the rendering when pages are first requested.
+  *References*: [PageDown](https://code.google.com/p/pagedown/wiki/PageDown) is used on Stack Overflow. [Prettify](https://github.com/google/code-prettify) is used to highlight code (e.g. highlight the injected html after client creates new contents). [MathJax](http://docs.mathjax.org/en/latest/start.html) and [MathJax tutorial](http://meta.math.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference), for researchers you definitly need it. [Flask-Markdown](https://pythonhosted.org/Flask-Markdown/) is used on the server for the rendering when pages are first requested.
 
 + **User Log In / Out**
 
@@ -64,5 +69,4 @@ python serve.py                     # start using the web
 + **SQLAlchemy**
 
   *References*: [Flask-SQLAlchemy Declaring Models](https://pythonhosted.org/Flask-SQLAlchemy/models.html), [SQLAlchemy basic relationship patterns](http://docs.sqlalchemy.org/en/rel_1_0/orm/basic_relationships.html), understand what does backref mean and how to define one-one, one-many and many-many relations.
-
 

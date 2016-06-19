@@ -9,8 +9,8 @@
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Sanitizer.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Editor.min.js"></script>
 
-<script src="https://google-code-prettify.googlecode.com/svn/loader/prettify.js"></script>
-<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
+<script src="https://cdn.rawgit.com/google/code-prettify/master/loader/prettify.js"></script>
+<script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
 
 <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 <script type="text/x-mathjax-config">
@@ -170,7 +170,7 @@ MathJax.Hub.Config({
             $.getJSON("{{ url_for('newcomment') }}",
                 {
                     mid: mid,
-                    cpid: mid,
+                    cpid: 0,
                     cmt: cmt,
                     isfresh: 1
                 }, function(data) {

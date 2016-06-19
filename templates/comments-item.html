@@ -2,11 +2,11 @@
 {%- for comment in comments recursive %}
 <div class="cmt-item" id="cid-{{ comment.cid }}">
 <div class="cmtheader">
-    <span class="commenter">{{ commenters[comment.cid] }}</span>    
-    {% if not comment.cpid == comment.mid %}
+    <span class="commenter">{{ commenters[comment.cid] }}</span>
+    {% if not comment.cpid == 0 %}
         {% if not commenters[comment.cid] == commenters[comment.cpid] %}
         <span class="icon-forward"><img src="static/imgs/icon-forward.svg" alt="reply"></span>
-        <span class="commenterp">{{ commenters[comment.cpid] }}</span> 
+        <span class="commenterp">{{ commenters[comment.cpid] }}</span>
         {% endif %}
     {% endif %}
     <span class="bullet">•</span>

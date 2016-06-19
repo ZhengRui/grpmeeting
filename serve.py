@@ -339,14 +339,14 @@ def displaycomments(mid):
         else:
             commenters[comment.cid] = 'Someone'
 
-    comments = mktreestructure(comments, mid)
+    comments = mktreestructure(comments, mid, 1)
     return render_template('comments-item.html', comments=comments, commenters=commenters)
 
-def mktreestructure(cmts, mid):
-    treel = [item for item in cmts if item.cpid == mid]
-    cmts = [item for item in cmts if not item.cpid == mid]
+def mktreestructure(cmts, mid, rootnode):
+    treel = [item for item in cmts if item.cpid == (0 if rootnode else mid)]
+    cmts = [item for item in cmts if not item.cpid == (0 if rootnode else mid)]
     for item in treel:
-        item.childcmts = mktreestructure(cmts, item.cid)
+        item.childcmts = mktreestructure(cmts, item.cid, 0)
     return treel
 
 @app.route('/getacomment')
